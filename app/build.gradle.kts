@@ -1,24 +1,19 @@
-val pagingVersion = "3.1.0"
-val accompanistVersion = "0.23.0"
-val composeVersion = "1.1.1"
-val ktorVersion = "1.6.7"
+@file:Suppress("UnstableApiUsage")
 
 plugins {
     id("com.android.application")
     id("kotlin-android")
     id("kotlin-parcelize")
-    id("dagger.hilt.android.plugin")
-    id("com.google.devtools.ksp") version "1.6.10-1.0.4"
-    kotlin("kapt")
+    kotlin("plugin.serialization") version "1.7.20"
 }
 
 android {
-    compileSdk = 31
+    namespace = "com.hyperion"
+    compileSdk = 33
 
     defaultConfig {
-        applicationId = "com.hyperion"
-        minSdk = 24
-        targetSdk = 31
+        minSdk = 21
+        targetSdk = 33
         versionCode = 1
         versionName = "0.0.1"
 
@@ -39,66 +34,72 @@ android {
 
     kotlinOptions {
         jvmTarget = "11"
-        freeCompilerArgs = freeCompilerArgs + "-Xopt-in=kotlin.RequiresOptIn"
+    }
+
+    packagingOptions {
+        resources {
+            excludes += "/**/*.version"
+            excludes += "/kotlin-tooling-metadata.json"
+            excludes += "/okhttp3/**"
+            excludes += "/DebugProbesKt.bin"
+        }
     }
 
     buildFeatures.compose = true
-    composeOptions.kotlinCompilerExtensionVersion = composeVersion
-}
-
-kotlin {
-    sourceSets {
-        debug {
-            kotlin.srcDir("build/generated/ksp/debug/kotlin")
-        }
-        release {
-            kotlin.srcDir("build/generated/ksp/release/kotlin")
-        }
-    }
+    composeOptions.kotlinCompilerExtensionVersion = "1.3.2"
 }
 
 dependencies {
-    // core dependencies
-    implementation("androidx.appcompat:appcompat:1.4.1")
-    implementation("androidx.core:core-ktx:1.7.0")
-    implementation("androidx.core:core-splashscreen:1.0.0-beta01")
+    // AndroidX core
+    implementation("androidx.core:core-ktx:1.9.0")
+    implementation("androidx.core:core-splashscreen:1.0.0")
 
-    // compose dependencies
-    implementation("androidx.compose.ui:ui:${composeVersion}")
-    implementation("androidx.compose.ui:ui-tooling:${composeVersion}")
-    implementation("androidx.compose.material:material:${composeVersion}")
-    implementation("androidx.compose.material3:material3:1.0.0-alpha07")
-    implementation("androidx.compose.material:material-icons-extended:1.2.0-alpha05")
-    implementation("androidx.paging:paging-compose:1.0.0-alpha14")
+    // AndroidX paging
+    implementation("androidx.paging:paging-compose:1.0.0-alpha16")
 
-    // accompanist dependencies
-    implementation("com.google.accompanist:accompanist-systemuicontroller:${accompanistVersion}")
+    // AndroidX activity
+    implementation("androidx.activity:activity-compose:1.6.0")
 
-    // compose destinations
-    implementation("io.github.raamcosta.compose-destinations:core:1.3.4-beta")
-    ksp("io.github.raamcosta.compose-destinations:ksp:1.3.4-beta")
+    // Koin
+    implementation("io.insert-koin:koin-android:3.2.2")
+    implementation("io.insert-koin:koin-androidx-compose:3.2.1")
 
-    // other dependencies
-    implementation("com.google.code.gson:gson:2.9.0")
-    implementation("io.coil-kt:coil-compose:2.0.0-rc01")
-    implementation("com.google.android.exoplayer:exoplayer:2.17.1")
+    // Compose
+    val composeVersion = "1.3.0-rc01"
+    implementation("androidx.compose.ui:ui:$composeVersion")
+    implementation("androidx.compose.runtime:runtime:$composeVersion")
+    debugImplementation("androidx.compose.runtime:runtime-tracing:1.0.0-alpha01")
+    debugImplementation("androidx.compose.ui:ui-tooling:$composeVersion")
+    implementation("androidx.compose.material3:material3:1.0.0-rc01")
+    implementation("androidx.compose.material:material-icons-extended:$composeVersion")
 
-    // ktor
+    // Accompanist
+    val accompanistVersion = "0.26.4-beta"
+    implementation("com.google.accompanist:accompanist-systemuicontroller:$accompanistVersion")
+    implementation("com.google.accompanist:accompanist-placeholder-material:$accompanistVersion")
+    implementation("com.google.accompanist:accompanist-swiperefresh:$accompanistVersion")
+    implementation("com.google.accompanist:accompanist-navigation-animation:$accompanistVersion")
+
+    // Coil
+    implementation("io.coil-kt:coil-compose:2.2.2")
+
+    // KotlinX
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
+
+    // Taxi
+    implementation("com.github.X1nto:Taxi:1.2.0")
+
+    // Media3
+    val media3Version = "1.0.0-beta02"
+    implementation("androidx.media3:media3-exoplayer:$media3Version")
+    implementation("androidx.media3:media3-ui:$media3Version")
+
+    // Ktor
+    val ktorVersion = "2.1.2"
     implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-android:$ktorVersion")
-    implementation("io.ktor:ktor-client-gson:$ktorVersion")
-    implementation("io.ktor:ktor-client-serialization:$ktorVersion")
-
-    implementation("com.google.android.gms:play-services-auth:20.1.0")
-    implementation("com.google.dagger:hilt-android:2.41")
-    kapt("com.google.dagger:hilt-android-compiler:2.41")
-    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
-
-    implementation("pub.devrel:easypermissions:3.0.0")
-    implementation("com.google.api-client:google-api-client-android:1.33.2") {
-        exclude("org.apache.httpcomponents")
-    }
-    implementation("com.google.apis:google-api-services-youtube:v3-rev20220312-1.32.1") {
-        exclude("org.apache.httpcomponents")
-    }
+    implementation("io.ktor:ktor-client-encoding:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
 }

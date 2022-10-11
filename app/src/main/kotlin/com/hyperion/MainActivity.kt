@@ -1,49 +1,74 @@
 package com.hyperion
 
-import android.app.Application
-import android.content.Context
 import android.os.Bundle
-import android.view.animation.AccelerateInterpolator
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.with
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.hyperion.preferences.Prefs
-import com.hyperion.preferences.sharedPreferences
-import com.hyperion.ui.components.HyperionScaffold
+import com.hyperion.domain.manager.PreferencesManager
+import com.hyperion.ui.navigation.AppDestination
+import com.hyperion.ui.screen.*
 import com.hyperion.ui.theme.HyperionTheme
 import com.hyperion.ui.theme.Theme
-import dagger.hilt.android.AndroidEntryPoint
-import dagger.hilt.android.HiltAndroidApp
+import com.xinto.taxi.Taxi
+import com.xinto.taxi.rememberBackstackNavigator
+import org.koin.android.ext.android.inject
 
-@HiltAndroidApp
-class App : Application()
-
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
+    private val preferences: PreferencesManager by inject()
+
+    @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
+
         super.onCreate(savedInstanceState)
-
-        installSplashScreen().setOnExitAnimationListener { provider ->
-            provider.view.animate().apply {
-                interpolator = AccelerateInterpolator()
-                duration = 200L
-
-                alpha(0f)
-                withEndAction(provider::remove)
-                start()
-            }
-        }
-
-        sharedPreferences = getPreferences(Context.MODE_PRIVATE)
 
         setContent {
             HyperionTheme(
-                isDarkTheme = Prefs.theme == Theme.SYSTEM && isSystemInDarkTheme() || Prefs.theme == Theme.DARK
+                isDarkTheme = preferences.theme == Theme.SYSTEM && isSystemInDarkTheme() || preferences.theme == Theme.DARK,
+                isDynamicColor = preferences.dynamicColor
             ) {
-                HyperionScaffold()
+                val navigator = rememberBackstackNavigator<AppDestination>(AppDestination.Home)
+
+                BackHandler {
+                    if (!navigator.pop()) finish()
+                }
+
+                Surface {
+                    Taxi(
+                        modifier = Modifier.fillMaxSize(),
+                        navigator = navigator,
+                        transitionSpec = { fadeIn() with fadeOut() }
+                    ) { destination ->
+                        when (destination) {
+                            is AppDestination.Home -> MainRootScreen(
+                                navigator = navigator
+                            )
+                            is AppDestination.Search -> SearchScreen(
+                                navigator = navigator
+                            )
+                            is AppDestination.Player -> PlayerScreen(
+                                navigator = navigator,
+                                videoId = destination.videoId
+                            )
+                            is AppDestination.Channel -> ChannelScreen(
+                                navigator = navigator,
+                                channelId = destination.channelId
+                            )
+                            is AppDestination.Settings -> SettingsScreen(
+                                onClickBack = navigator::pop
+                            )
+                        }
+                    }
+                }
             }
         }
     }
